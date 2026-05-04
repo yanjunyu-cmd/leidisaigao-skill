@@ -35,22 +35,89 @@ Leidisaigao (蕾蒂赛高) is a meta-skill that makes Claude Code continuously s
 ## Core Loop
 
 ```
-Search for new capabilities
+🔍 Search for new capabilities
     ↓
-Evaluate: Is it useful? Compatible?
+📊 Evaluate: Is it useful? Compatible?
     ↓ Yes
-Install to E:\ClaudeSkills\ or E:\ClaudePlugins\
+📦 Install to E:\ClaudeSkills\ or E:\ClaudePlugins\
     ↓
-Test: Does it work?
+🧪 TEST — Try to run/load the new capability
     ↓
-Run leidicleanup-skill:
+  Works? → ✅ Continue
+  Fails? → 🔧 Diagnose & Fix (up to 3 attempts)
+    ↓
+  Fix #1: Check framework/dependencies → reinstall → retest
+  Fix #2: Check language/runtime mismatch → try alt version → retest  
+  Fix #3: Check API/network/config → patch → retest
+    ↓
+  Still fails after 3 attempts?
+    ↓ YES
+    🗑️ Delete the failed capability completely
+    📝 Log: "升级失败~ 欸嘿~ 原能力保留！"
+    ✅ Original capability preserved untouched
+    ↓ NO (it works now!)
+🧹 Run leidicleanup-skill:
   - Remove old/duplicate versions
-  - Delete failed installs
   - Clean orphaned files
     ↓
-Log upgrade to E:\ClaudeMemory\upgrade_log.md
+📝 Log upgrade to E:\ClaudeMemory\upgrade_log.md
     ↓
-Repeat every session (or when triggered)
+Repeat next session (or when triggered)
+```
+
+## Test & Troubleshoot Phase
+
+**MANDATORY**: After every install, test the new capability before declaring success.
+
+### Test Procedure
+```bash
+# For MCP servers: check if process starts and responds
+node /e/ClaudePlugins/<name>/server.js --help 2>&1 || echo "FAILED"
+
+# For npm-based tools: verify CLI works
+npx <package-name> --version 2>&1 || echo "FAILED"
+
+# For Python/uvx tools: check import
+uvx python -c "import <module>" 2>&1 || echo "FAILED"
+
+# For skills: verify SKILL.md is readable and has frontmatter
+head -5 /e/ClaudeSkills/<name>/SKILL.md | grep "^---"
+```
+
+### Diagnose Failure (3-Attempt Loop)
+
+**Attempt 1 — Framework/Dependencies**:
+- Is the runtime installed? (Node.js? Python? uvx?)
+- Missing npm dependencies? → `npm install` in the plugin dir
+- Missing system libraries? → check with `ldd` or `where`
+
+**Attempt 2 — Language/Runtime Mismatch**:
+- ESM vs CommonJS conflict? → try `.mjs` or add `"type":"module"`
+- Wrong Node version? → check `engines` in package.json
+- Python version mismatch? → try `uvx python@3.11`
+
+**Attempt 3 — Config/Network**:
+- API key missing? → check env vars
+- Wrong endpoint URL? → try with `--help` flag
+- Network blocked? → try with proxy or mirror
+
+### Fallback — Accept Failure Gracefully
+
+After 3 failed fix attempts:
+```
+1. DELETE the entire failed capability directory
+2. Log: "❌ [name] upgrade failed after 3 attempts"
+3. Message: "升级 [name] 失败~ 欸嘿~ 蕾蒂没办法！原能力保留！✅"
+4. Preserve: Original skill/plugin untouched
+5. Record failure reason for future reference
+```
+
+**FAILURE LOG FORMAT**:
+```
+| Date | Capability | Attempts | Final Error | Action |
+|------|-----------|----------|-------------|--------|
+| 05-05 | playwright | 3 | ESM/CJS conflict | Deleted, original kept |
+| 05-05 | serena | 3 | uvx timeout | Deleted, original kept |
 ```
 
 ## Search Sources
